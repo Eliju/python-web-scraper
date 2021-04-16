@@ -7,10 +7,25 @@ def open_url():
 
     page = urlopen(url)
     html = page.read().decode("utf-8")
-    pattern = '<a href="/title/tt.*?/".>.*?</a>'
-    pattern = "<a href=./title/tt.*?/.\n>.*?</a>"
-    match_results = re.findall(pattern, html, re.IGNORECASE|re.MULTILINE)
-    titles = [re.sub("<.*?>", "", title) for title in [re.sub("<.*?\n>", "", title) for title in match_results]]
 
+    titles = get_titles(html)
+    years = get_years(html)
     print(html)
-    print(titles)
+    print(len(titles))
+    print(len(years))
+
+
+def get_titles(html):
+    pattern = "<a href=./title/tt.*?/.\n>.*?</a>"
+    return get_elements(html, pattern)
+
+
+def get_years(html):
+    pattern = "<span class=.lister-item-year text-muted unbold.>.*?</span>"
+    return get_elements(html, pattern)
+
+
+def get_elements(html, pattern):
+    match_results = re.findall(pattern, html, re.IGNORECASE | re.MULTILINE)
+    elements = [re.sub("<.*?>", "", element) for element in [re.sub("<.*?\n>", "", element) for element in match_results]]
+    return elements
