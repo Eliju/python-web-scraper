@@ -19,10 +19,6 @@ def open_url():
     classification_details = get_classification_details(html)
     rating_values = get_rating_values(html)
     metascores = get_metascores(html)
-    #print(html)
-    #print(len(classification_details))
-    print(metascores)
-    print(len(metascores))
 
 
 def get_titles(html):
@@ -58,8 +54,11 @@ def get_ranks(html):
 
 
 def get_director(html):
-    pattern = "<p class=.text-muted.>\n.*?</p>\n.*?<p class=..>\n.*?Director:\n<a href=.*?\n>.*?</a>"
-    return get_elements(html, pattern)
+    pattern = "(<a href=./title/.*?<div class=.lister-item-image float-left.>|<a href=./title/.*?lister-page-next next-page)"
+    match_results = re.findall(pattern, html, re.IGNORECASE | re.MULTILINE | re.DOTALL)
+    directors = ["" if element.find('Director') == -1 else element for element in match_results]
+    directors = [re.sub("</a>.*?<div class=.lister-item-image float-left.>|</a>.*?lister-page-next next-page", "", element, flags = re.MULTILINE | re.DOTALL) for element in [re.sub("</a>.*?Director:\n<a href=./name/.*?>", " Director: ", element, flags=re.DOTALL) for element in [re.sub("<a href=./title/.*?<a href=./title/.*?>", "", element, flags = re.DOTALL, count = 1) for element in directors]]]
+    return directors
 
 
 def get_stars(html):
@@ -75,19 +74,20 @@ def get_classification_details(html):
 def get_rating_values(html):
     pattern = " {4}<a href=./title/.*?<meta itemprop=.ratingValue. content=..*?. />.*?<span class=.rating-bg.>"
     elements = get_elements(html, pattern)
-    rating_values = [re.sub("</a>", "", element) for element in [re.sub("content=.", "content=", element) for element in [re.sub("<span.*?>", "", element) for element in [re.sub("<meta itemprop=", "", element) for element in [re.sub("<span .*?itemprop=", "", element ) for element in [re.sub("</div>", "", element) for element in [re.sub("<div.*?>", "", element) for element in [re.sub("Rate this.*?<meta", "", element).strip() for element in [re.sub(". />", "", element) for element in elements]]]]]]]]]
+    rating_values = [re.sub("Rate this", "", element) for element in [re.sub("</a>", "", element) for element in [re.sub("content=.", "content=", element) for element in [re.sub("<span.*?>", "", element) for element in [re.sub("<meta itemprop=", "", element) for element in [re.sub("<span .*?itemprop=", "", element ) for element in [re.sub("</div>", "", element) for element in [re.sub("<div.*?>", "", element) for element in [re.sub("Rate this.*?<meta", "", element).strip() for element in [re.sub(". />", "", element) for element in elements]]]]]]]]]]
     return rating_values
 
 
 def get_metascores(html):
     pattern = "(<a href=./title/.*?<div class=.lister-item-image float-left.>|<a href=./title/.*?lister-page-next next-page)"
     match_results = re.findall(pattern, html, re.IGNORECASE | re.MULTILINE | re.DOTALL)
-    metascores = [re.sub("</span>.*?<div class=.lister-item-image float-left.>", "", element, flags=re.DOTALL) for element in [re.sub("</a>.*?class=.metascore", " \"metascore", element, flags=re.DOTALL) for element in [re.sub("<a href=./title/.*?<a href=./title/.*?>", "", element, flags = re.DOTALL) for element in match_results]]]
+    metascores = [re.sub("</span>.*?<div class=.lister-item-image float-left.>|</span>.*?lister-page-next next-page", "", element, flags=re.DOTALL) for element in [re.sub("</a>.*?class=\"metascore", " \"metascore", element, flags=re.DOTALL) for element in [re.sub("<a href=./title/.*?<a href=./title/.*?>", "", element, flags = re.DOTALL, count = 1) for element in match_results]]]
     metascores = ["" if element.find('metascore') == -1 else element for element in metascores]
     metascores = [re.sub(">", " ", element) for element in metascores]
     return metascores
 
+
 def get_elements(html, pattern):
     match_results = re.findall(pattern, html, re.IGNORECASE | re.MULTILINE | re.DOTALL)
-    elements = [re.sub("\n", "", element.strip()) for element in [re.sub("<.*?\n>", "", element) for element in match_results]]
+    elements = [re.sub("<.*?>", "", element) for element in [re.sub("\n", "", element.strip()) for element in [re.sub("<.*?\n>", "", element) for element in match_results]]]
     return elements
