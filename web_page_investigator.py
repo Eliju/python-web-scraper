@@ -1,12 +1,7 @@
-from urllib.request import urlopen
 import re
 import pandas as pd
 
 
-def open_url(url):
-    page = urlopen(url)
-    html = page.read().decode("utf-8")
-    return html
 
 
 def get_values_from_page(html):
@@ -21,11 +16,12 @@ def get_values_from_page(html):
     classification_details = get_classification_details(html)
     rating_values = get_rating_values(html)
     metascores = get_metascores(html)
-    dict_movies = {'Rank': ranks, 'Title': titles, 'Year': years, 'Genre': genres, 'Description': descriptions,
-                   'Image': images, 'Director': directors, 'Stars': stars, 'Classifications': classification_details,
-                   'Ratings': rating_values, 'Metascore': metascores}
-    df_movies = pd.DataFrame(dict_movies)
-    return df_movies
+    #dict_movies = {'Rank': ranks, 'Title': titles, 'Year': years, 'Genre': genres, 'Description': descriptions,
+    #               'Image': images, 'Director': directors, 'Stars': stars, 'Classifications': classification_details,
+    #               'Ratings': rating_values, 'Metascore': metascores}
+    #df_movies = pd.DataFrame(dict_movies)
+    dict_movies = [ranks, titles, years, genres, descriptions, images, directors,stars, classification_details, rating_values, metascores]
+    return dict_movies
 
 
 def get_titles(html):

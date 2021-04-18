@@ -1,6 +1,9 @@
-import web_page_investigator
+import site_iterator
+
 
 if __name__ == '__main__':
-    html = web_page_investigator.open_url("https://www.imdb.com/search/title/?genres=film-noir")
-    df_movies = web_page_investigator.get_values_from_page(html)
-    print(df_movies.iloc[:,:2])
+    df_movies = site_iterator.iterate_site('imdb')
+    print(df_movies.iloc[:,:3])
+
+
+
