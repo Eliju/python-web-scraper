@@ -2,8 +2,6 @@ import re
 import pandas as pd
 
 
-
-
 def get_values_from_page(html):
     titles = get_titles(html)
     years = get_years(html)
@@ -16,18 +14,15 @@ def get_values_from_page(html):
     classification_details = get_classification_details(html)
     rating_values = get_rating_values(html)
     metascores = get_metascores(html)
-    #dict_movies = {'Rank': ranks, 'Title': titles, 'Year': years, 'Genre': genres, 'Description': descriptions,
-    #               'Image': images, 'Director': directors, 'Stars': stars, 'Classifications': classification_details,
-    #               'Ratings': rating_values, 'Metascore': metascores}
-    #df_movies = pd.DataFrame(dict_movies)
-    dict_movies = [ranks, titles, years, genres, descriptions, images, directors,stars, classification_details, rating_values, metascores]
-    return dict_movies
+    list_movie_details = [ranks, titles, years, genres, descriptions, images, directors,stars, classification_details, rating_values, metascores]
+    return list_movie_details
 
 
 def get_titles(html):
     pattern = "<h3 class=.*?<a href=./title/tt.*?/.\n>.*?</a>"
     elements = get_elements(html, pattern)
-    titles = [element.strip().split('.  ')[1].strip() for element in elements]
+    titles = [re.sub('\. ', '.  ', element) for element in elements]
+    titles = [element.strip().split('.  ')[1].strip() for element in titles]
     return titles
 
 
@@ -68,13 +63,14 @@ def get_director(html):
     directors = ["" if element.find('Director') == -1 else element for element in match_results]
     directors = [re.sub("</a>.*?<div class=.lister-item-image float-left.>|</a>.*?lister-page-next next-page", "", element, flags = re.MULTILINE | re.DOTALL) for element in [re.sub("</a>.*?Director:\n<a href=./name/.*?>", " Director: ", element, flags=re.DOTALL) for element in [re.sub("<a href=./title/.*?<a href=./title/.*?>", "", element, flags = re.DOTALL, count = 1) for element in directors]]]
     directors = [element.split(' Director: ') for element in directors]
+    directors = ['Director: ' + element[1] if len(element) == 2 else 'Director:\'\'' for element in directors]
     return directors
 
 
 def get_stars(html):
     pattern = "Stars:.*?</p>"
     elements = get_elements(html, pattern)
-    stars = [re.sub('Stars:', '', element) for element in [element.strip() for element in elements]]
+    stars = [re.sub('Stars:', 'Stars: ', element) for element in [element.strip() for element in elements]]
     return stars
 
 
@@ -91,7 +87,7 @@ def get_rating_values(html):
     pattern = "(<a href=./title/.*?<div class=.lister-item-image float-left.>|<a href=./title/.*?lister-page-next next-page)"
     match_results = re.findall(pattern, html, re.IGNORECASE | re.MULTILINE | re.DOTALL)
     rating_values = ["" if element.find('rating') == -1 else element for element in match_results]
-    rating_values = [re.sub("/>", "", element, flags = re.MULTILINE | re.DOTALL) for element in [re.sub("<meta itemprop=", "", element, flags = re.MULTILINE | re.DOTALL) for element in [re.sub("</a>.*?aggregateRating.>", "", element, flags = re.MULTILINE | re.DOTALL) for element in [re.sub("<a href=./title/.*?<a href=./title/.*?>", "", element, flags=re.MULTILINE | re.DOTALL, count = 1) for element in match_results]]]]
+    rating_values = [re.sub("/>", "", element, flags = re.MULTILINE | re.DOTALL) for element in [re.sub("<meta itemprop=", "", element, flags = re.MULTILINE | re.DOTALL) for element in [re.sub("</a>.*?aggregateRating.>", "", element, flags = re.MULTILINE | re.DOTALL) for element in [re.sub("<a href=./title/.*?<a href=./title/.*?>", "", element, flags=re.MULTILINE | re.DOTALL, count = 1) for element in rating_values]]]]
     rating_values = [re.sub("<span.*?<div class=.lister-item-image float-left.>|<span.*?lister-page-next next-page", "", element, flags = re.MULTILINE | re.DOTALL) for element in rating_values]
     rating_values = [re.sub("content=\"", "content=", element, flags = re.MULTILINE | re.DOTALL) for element in [re.sub("<.*?>", "", element, flags = re.MULTILINE | re.DOTALL) for element in rating_values]]
     rating_values = [re.sub("\n", " ", element, flags = re.MULTILINE | re.DOTALL) for element in rating_values]
@@ -117,3 +113,12 @@ def get_elements(html, pattern):
     match_results = re.findall(pattern, html, re.IGNORECASE | re.MULTILINE | re.DOTALL)
     elements = [re.sub("<.*?>", "", element) for element in [re.sub("\n", "", element.strip()) for element in [re.sub("<.*?\n>", "", element) for element in match_results]]]
     return elements
+
+
+def get_max_number_of_items(html):
+    pattern = '<span>.*?-.*? of .*? titles.</span>'
+    match_results = re.search(pattern, html, flags=re.IGNORECASE | re.MULTILINE | re.DOTALL)
+    max_number = re.sub('<span>.*? of ', '', match_results.group())
+    max_number = re.sub(' titles.</span>', '', max_number)
+    max_number = max_number.replace(',','')
+    return int(max_number)

@@ -2,8 +2,8 @@ from urllib.request import urlopen
 
 import pandas as pd
 import re
+import copy
 
-import helpers
 import web_page_investigator
 
 
@@ -13,8 +13,8 @@ def open_url(url):
     return html
 
 
-def iterate_site(site):
-    dict_configs = helpers.get_configs('web_scraper.properties')
+def iterate_site(site, configs):
+    dict_configs = configs
 
     base_url = dict_configs.get(site + '_base_url')
     search_string = dict_configs.get(site + '_genre_search')
@@ -23,16 +23,24 @@ def iterate_site(site):
     genre_list = genres.split(',')
     max_pages = int(dict_configs.get(site + '_max_pages'))
 
-    dict_all_movies = {}
+    dict_of_dataframes = {}
 
     for g in range(0, len(genre_list)):
+        dict_all_movies = {}
         genre = genre_list[g]
+
+        url = base_url + search_string + genre + start_item + str('1')
+        html = open_url(url)
+        max_number = web_page_investigator.get_max_number_of_items(html)
 
         for p in range(0, max_pages):
             if len(dict_all_movies) == 0:
                 next_item = 1
             else:
-                next_item = max([int(element) for element in [re.sub('\.', '', element) for element in dict_all_movies[0]]]) + 1
+                next_item = max([int(element) for element in [re.sub(",", "", element) for element in
+                                                              [re.sub('\.', '', element) for element in dict_all_movies[0]]]]) + 1
+                if next_item > max_number:
+                    break
 
             url = base_url + search_string + genre + start_item + str(next_item)
             html = open_url(url)
@@ -44,6 +52,115 @@ def iterate_site(site):
                     values = dict_movies[i]
                     dict_all_movies[i] = dict_all_movies[i] + values
 
-    df_movies = pd.DataFrame(dict_all_movies)
-    return df_movies.T
+        movie_columns = ['Rank', 'Title', 'Year', 'Genre', 'Description',
+                         'Image', 'Director', 'Stars', 'Classifications',
+                         'Ratings', 'Metascore']
+
+        df_movies = pd.DataFrame(dict_all_movies)
+        df_movies = df_movies.T
+        df_movies.columns = movie_columns
+        df_movies['Duration'] = df_movies['Classifications'].apply(check_list_for_duration)
+        df_movies['Restriction'] = df_movies['Classifications'].apply(check_list_for_restriction)
+        df_movies.drop('Classifications', inplace=True, axis=1)
+        df_movies['RatingValue'] = df_movies['Ratings'].apply(check_list_for_ratingvalue)
+        df_movies['BestRating'] = df_movies['Ratings'].apply(check_list_for_bestrating)
+        df_movies['CountRating'] = df_movies['Ratings'].apply(check_list_for_ratingcount)
+        df_movies.drop('Ratings', inplace=True, axis=1)
+        df_movies['Metascore_Favorable'] = df_movies['Metascore'].apply(check_list_for_metascore_favorable)
+        df_movies['Metascore_Mixed'] = df_movies['Metascore'].apply(check_list_for_metascore_mixed)
+        df_movies['Metascore_Unfavorable'] = df_movies['Metascore'].apply(check_list_for_metascore_unfavorable)
+        df_movies.drop('Metascore', inplace=True, axis=1)
+        dict_of_dataframes['df_for_' + genre] = copy.deepcopy(df_movies)
+
+    return dict_of_dataframes
+
+
+def check_list_for_duration(item_list):
+    ret_val = ''
+    if item_list is None:
+        return
+    if len(item_list) > 1:
+        for ix in range(0,len(item_list)):
+            if item_list[ix].find('min') > -1:
+                ret_val = item_list[ix]
+    return ret_val
+
+
+def check_list_for_restriction(item_list):
+    ret_val = ''
+    if item_list is None:
+        return
+    if len(item_list) > 1:
+        for ix in range(0,len(item_list)):
+            if item_list[ix].find('-') > -1:
+                ret_val = item_list[ix]
+    return ret_val
+
+
+def check_list_for_ratingvalue(item_list):
+    ret_val = ''
+    if item_list is None:
+        return
+    if len(item_list) > 1:
+        for ix in range(0,len(item_list)):
+            if item_list[ix].find('ratingValue') > -1:
+                ret_val = item_list[ix + 1].replace('content=','')
+    return ret_val
+
+
+def check_list_for_bestrating(item_list):
+    ret_val = ''
+    if item_list is None:
+        return
+    if len(item_list) > 1:
+        for ix in range(0,len(item_list)):
+            if item_list[ix].find('bestRating') > -1:
+                ret_val = item_list[ix + 1].replace('content=','')
+    return ret_val
+
+
+def check_list_for_ratingcount(item_list):
+    ret_val = ''
+    if item_list is None:
+        return
+    if len(item_list) > 1:
+        for ix in range(0,len(item_list)):
+            if item_list[ix].find('ratingCount') > -1:
+                ret_val = item_list[ix + 1].replace('content=','')
+    return ret_val
+
+
+def check_list_for_metascore_favorable(item_list):
+    ret_val = ''
+    if item_list is None:
+        return
+    if len(item_list) > 1:
+        for ix in range(0,len(item_list)):
+            if item_list[ix].find('metascore  favorable') > -1:
+                ret_val = item_list[ix + 1]
+    return ret_val
+
+
+def check_list_for_metascore_mixed(item_list):
+    ret_val = ''
+    if item_list is None:
+        return
+    if len(item_list) > 1:
+        for ix in range(0,len(item_list)):
+            if item_list[ix].find('metascore  mixed') > -1:
+                ret_val = item_list[ix + 1]
+    return ret_val
+
+
+def check_list_for_metascore_unfavorable(item_list):
+    ret_val = ''
+    if item_list is None:
+        return
+    if len(item_list) > 1:
+        for ix in range(0,len(item_list)):
+            if item_list[ix].find('metascore  unfavorable') > -1:
+                ret_val = item_list[ix + 1]
+    return ret_val
+
+
 
