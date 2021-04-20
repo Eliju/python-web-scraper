@@ -69,7 +69,7 @@ def get_director(html):
     match_results = re.findall(pattern, html, flags=re.IGNORECASE | re.MULTILINE | re.DOTALL)
     directors = ["" if element.find('Director') == -1 else element for element in match_results]
     directors = [re.sub(
-          "<span class=.ghost.>.</span>.*?Stars:.*?<div class=.lister-item-image float-left.>|<span class=.ghost.>.</span>.*?Stars:.*?lister-page-next next-page|<span class=.ghost.>.</span>.*?Stars:.*?lister-page-prev prev-page",
+          "<span class=.ghost.>.</span>.*?Star.*?<div class=.lister-item-image float-left.>|<span class=.ghost.>.</span>.*?Star.*?lister-page-next next-page|<span class=.ghost.>.</span>.*?Star.*?lister-page-prev prev-page",
           "", element, flags=re.IGNORECASE | re.MULTILINE | re.DOTALL) for element in
                    [re.sub("</a>.*?Directors:\n<a href=./name/.*?>", " Director: ", element,
                         flags=re.IGNORECASE | re.MULTILINE | re.DOTALL) for element
@@ -87,7 +87,7 @@ def get_director(html):
 
 
 def get_stars(html):
-    pattern = "Stars:.*?</p>"
+    pattern = "(Stars:.*?</p>|Star:.*?</p>)"
     elements = get_elements(html, pattern)
     stars = [re.sub('Stars:', 'Stars: ', element) for element in [element.strip() for element in elements]]
     return stars
