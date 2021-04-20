@@ -22,7 +22,7 @@ def iterate_site(site, configs):
     start_item = dict_configs.get(site + '_start_item')
     genre_list = genres.split(',')
     max_pages = int(dict_configs.get(site + '_max_pages'))
-    next_item = int(dict_configs.get(site + '_start_from'))
+    next_item = int(dict_configs.get(site + '_start_from')) - 1
     dict_of_dataframes = {}
 
     for g in range(0, len(genre_list)):

@@ -27,8 +27,13 @@ def get_titles(html):
 
 
 def get_years(html):
-    pattern = "<span class=.lister-item-year text-muted unbold.>.*?</span>"
-    return get_elements(html, pattern)
+    #pattern = "<span class=.lister-item-year text-muted unbold.>.*?</span>"
+    pattern = "(<a href=./title/.*?<div class=.lister-item-image float-left.>|<a href=./title/.*?lister-page-next next-page|<a href=./title/.*?lister-page-prev prev-page)"
+    match_results = re.findall(pattern, html, flags=re.IGNORECASE | re.MULTILINE | re.DOTALL)
+    match_results = [re.sub("<a href=./title/.*?<span class=.lister-item-year text-muted unbold.>", "", element, flags=re.IGNORECASE | re.MULTILINE | re.DOTALL, count=1) for element in match_results]
+    match_results = [re.sub("(</span.*?<div class=.lister-item-image float-left.>|</span.*?lister-page-next next-page|</span.*?lister-page-prev prev-page)", "", element, flags=re.IGNORECASE | re.MULTILINE | re.DOTALL, count=1) for element in match_results]
+    years = [re.sub("<.*?>", "", element, flags=re.IGNORECASE | re.MULTILINE | re.DOTALL) for element in [re.sub("\n", "", element.strip(), flags=re.IGNORECASE | re.MULTILINE | re.DOTALL) for element in [re.sub("<.*?\n>", "", element, flags=re.IGNORECASE | re.MULTILINE | re.DOTALL) for element in match_results]]]
+    return years
 
 
 def get_genres(html):
@@ -60,11 +65,11 @@ def get_ranks(html):
 
 
 def get_director(html):
-    pattern = "(<a href=./title/.*?<div class=.lister-item-image float-left.>|<a href=./title/.*?lister-page-next next-page)"
+    pattern = "(<a href=./title/.*?<div class=.lister-item-image float-left.>|<a href=./title/.*?lister-page-next next-page|<a href=./title/.*?lister-page-prev prev-page)"
     match_results = re.findall(pattern, html, flags=re.IGNORECASE | re.MULTILINE | re.DOTALL)
     directors = ["" if element.find('Director') == -1 else element for element in match_results]
     directors = [re.sub(
-          "<span class=.ghost.>.</span>.*?Stars:.*?<div class=.lister-item-image float-left.>|<span class=.ghost.>.</span>.*?Stars:.*?lister-page-next next-page",
+          "<span class=.ghost.>.</span>.*?Stars:.*?<div class=.lister-item-image float-left.>|<span class=.ghost.>.</span>.*?Stars:.*?lister-page-next next-page|<span class=.ghost.>.</span>.*?Stars:.*?lister-page-prev prev-page",
           "", element, flags=re.IGNORECASE | re.MULTILINE | re.DOTALL) for element in
                    [re.sub("</a>.*?Directors:\n<a href=./name/.*?>", " Director: ", element,
                         flags=re.IGNORECASE | re.MULTILINE | re.DOTALL) for element
@@ -98,11 +103,11 @@ def get_classification_details(html):
 
 
 def get_rating_values(html):
-    pattern = "(<a href=./title/.*?<div class=.lister-item-image float-left.>|<a href=./title/.*?lister-page-next next-page)"
+    pattern = "(<a href=./title/.*?<div class=.lister-item-image float-left.>|<a href=./title/.*?lister-page-next next-page|<a href=./title/.*?lister-page-prev prev-page)"
     match_results = re.findall(pattern, html, re.IGNORECASE | re.MULTILINE | re.DOTALL)
     rating_values = ["" if element.find('rating') == -1 else element for element in match_results]
     rating_values = [re.sub("/>", "", element, flags = re.MULTILINE | re.DOTALL) for element in [re.sub("<meta itemprop=", "", element, flags = re.MULTILINE | re.DOTALL) for element in [re.sub("</a>.*?aggregateRating.>", "", element, flags = re.MULTILINE | re.DOTALL) for element in [re.sub("<a href=./title/.*?<a href=./title/.*?>", "", element, flags=re.MULTILINE | re.DOTALL, count = 1) for element in rating_values]]]]
-    rating_values = [re.sub("<span.*?<div class=.lister-item-image float-left.>|<span.*?lister-page-next next-page", "", element, flags = re.MULTILINE | re.DOTALL) for element in rating_values]
+    rating_values = [re.sub("<span.*?<div class=.lister-item-image float-left.>|<span.*?lister-page-next next-page|<span.*?lister-page-prev prev-page", "", element, flags = re.MULTILINE | re.DOTALL) for element in rating_values]
     rating_values = [re.sub("content=\"", "content=", element, flags = re.MULTILINE | re.DOTALL) for element in [re.sub("<.*?>", "", element, flags = re.MULTILINE | re.DOTALL) for element in rating_values]]
     rating_values = [re.sub("\n", " ", element, flags = re.MULTILINE | re.DOTALL) for element in rating_values]
     rating_values = [re.sub("\"bestRating", "bestRating", element, flags = re.MULTILINE | re.DOTALL) for element in [re.sub("\"ratingCount", "ratingCount", element, flags = re.MULTILINE | re.DOTALL) for element in rating_values]]
@@ -113,9 +118,9 @@ def get_rating_values(html):
 
 
 def get_metascores(html):
-    pattern = "(<a href=./title/.*?<div class=.lister-item-image float-left.>|<a href=./title/.*?lister-page-next next-page)"
+    pattern = "(<a href=./title/.*?<div class=.lister-item-image float-left.>|<a href=./title/.*?lister-page-next next-page|<a href=./title/.*?lister-page-prev prev-page)"
     match_results = re.findall(pattern, html, re.IGNORECASE | re.MULTILINE | re.DOTALL)
-    metascores = [re.sub("</span>.*?<div class=.lister-item-image float-left.>|</span>.*?lister-page-next next-page", "", element, flags=re.DOTALL) for element in [re.sub("</a>.*?class=\"metascore", " \"metascore", element, flags=re.DOTALL) for element in [re.sub("<a href=./title/.*?<a href=./title/.*?>", "", element, flags = re.DOTALL, count = 1) for element in match_results]]]
+    metascores = [re.sub("</span>.*?<div class=.lister-item-image float-left.>|</span>.*?lister-page-next next-page|</span>.*?lister-page-prev prev-page", "", element, flags=re.DOTALL) for element in [re.sub("</a>.*?class=\"metascore", " \"metascore", element, flags=re.DOTALL) for element in [re.sub("<a href=./title/.*?<a href=./title/.*?>", "", element, flags = re.DOTALL, count = 1) for element in match_results]]]
     metascores = ["" if element.find('metascore') == -1 else element for element in metascores]
     metascores = [re.sub(">", " ", element) for element in metascores]
     metascores = [element.split('"') for element in metascores]
