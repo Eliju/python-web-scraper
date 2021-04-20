@@ -54,7 +54,9 @@ def get_images(html):
 
 def get_ranks(html):
     pattern = "<span class=.lister-item-index unbold text-primary.>.*?</span>"
-    return get_elements(html, pattern)
+    elements = get_elements(html, pattern)
+    ranks = [re.sub(',', '', element, flags=re.IGNORECASE | re.MULTILINE | re.DOTALL) for element in [re.sub('\.', '', element, flags=re.IGNORECASE | re.MULTILINE | re.DOTALL) for element in elements]]
+    return ranks
 
 
 def get_director(html):

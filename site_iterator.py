@@ -41,8 +41,7 @@ def iterate_site(site, configs):
             if  dict_all_movies == {}:
                 item_to_be_fetched = next_item + 1
             else:
-                item_to_be_fetched = max([int(element) for element in [re.sub(",", "", element) for element in
-                                                         [re.sub('\.', '', element) for element in dict_all_movies[0]]]]) + 1
+                item_to_be_fetched = max([int(element) for element in dict_all_movies[0]]) + 1
             if item_to_be_fetched > max_number:
                 break
 
