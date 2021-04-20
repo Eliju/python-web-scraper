@@ -59,11 +59,29 @@ def get_ranks(html):
 
 def get_director(html):
     pattern = "(<a href=./title/.*?<div class=.lister-item-image float-left.>|<a href=./title/.*?lister-page-next next-page)"
-    match_results = re.findall(pattern, html, re.IGNORECASE | re.MULTILINE | re.DOTALL)
+    match_results = re.findall(pattern, html, flags=re.IGNORECASE | re.MULTILINE | re.DOTALL)
     directors = ["" if element.find('Director') == -1 else element for element in match_results]
-    directors = [re.sub("</a>.*?<div class=.lister-item-image float-left.>|</a>.*?lister-page-next next-page", "", element, flags = re.MULTILINE | re.DOTALL) for element in [re.sub("</a>.*?Director:\n<a href=./name/.*?>", " Director: ", element, flags=re.DOTALL) for element in [re.sub("<a href=./title/.*?<a href=./title/.*?>", "", element, flags = re.DOTALL, count = 1) for element in directors]]]
+    # directors = [re.sub(
+    #      "<span class=.ghost.>.</span>.*?Stars:.*?<div class=.lister-item-image float-left.>|<span class=.ghost.>.</span>.*?Stars:.*?lister-page-next next-page",
+    #      "", element, flags=re.IGNORECASE | re.MULTILINE | re.DOTALL) for element in
+    #               [re.sub("</a>.*?Director.:\n<a href=./name/.*?>", " Director: ", element, flags=re.IGNORECASE | re.MULTILINE | re.DOTALL) for element
+    #                in [re.sub("<a href=./title/.*?<a href=./title/.*?>", "", element, flags=re.IGNORECASE | re.MULTILINE | re.DOTALL, count=1) for element in
+    #                directors]]]
+    directors = [re.sub(
+          "<span class=.ghost.>.</span>.*?Stars:.*?<div class=.lister-item-image float-left.>|<span class=.ghost.>.</span>.*?Stars:.*?lister-page-next next-page",
+          "", element, flags=re.IGNORECASE | re.MULTILINE | re.DOTALL) for element in
+                   [re.sub("</a>.*?Directors:\n<a href=./name/.*?>", " Director: ", element,
+                        flags=re.IGNORECASE | re.MULTILINE | re.DOTALL) for element
+                 in [re.sub("</a>.*?Director:\n<a href=./name/.*?>", " Director: ", element,
+                            flags=re.IGNORECASE | re.MULTILINE | re.DOTALL) for element
+                     in [re.sub("<a href=./title/.*?<a href=./title/.*?>", "", element,
+                                flags=re.IGNORECASE | re.MULTILINE | re.DOTALL, count=1) for element in
+                         directors]]]]
+
+    directors = [re.sub("\n","", element, flags=re.IGNORECASE | re.MULTILINE | re.DOTALL) for element in
+                 [re.sub("<.*?>","", element, flags=re.IGNORECASE | re.MULTILINE | re.DOTALL) for element in directors]]
     directors = [element.split(' Director: ') for element in directors]
-    directors = ['Director: ' + element[1] if len(element) == 2 else 'Director:\'\'' for element in directors]
+    directors = ['Director: ' + element[1].strip() if len(element) == 2 else 'Director:\'\'' for element in directors]
     return directors
 
 

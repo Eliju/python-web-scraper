@@ -22,7 +22,7 @@ def iterate_site(site, configs):
     start_item = dict_configs.get(site + '_start_item')
     genre_list = genres.split(',')
     max_pages = int(dict_configs.get(site + '_max_pages'))
-
+    next_item = int(dict_configs.get(site + '_start_from'))
     dict_of_dataframes = {}
 
     for g in range(0, len(genre_list)):
@@ -34,13 +34,14 @@ def iterate_site(site, configs):
         max_number = web_page_investigator.get_max_number_of_items(html)
 
         for p in range(0, max_pages):
-            if len(dict_all_movies) == 0:
-                next_item = 1
-            else:
-                next_item = max([int(element) for element in [re.sub(",", "", element) for element in
-                                                              [re.sub('\.', '', element) for element in dict_all_movies[0]]]]) + 1
-                if next_item > max_number:
-                    break
+            if next_item == 0:
+                if len(dict_all_movies) == 0:
+                    next_item = 1
+                else:
+                    next_item = max([int(element) for element in [re.sub(",", "", element) for element in
+                                                                  [re.sub('\.', '', element) for element in dict_all_movies[0]]]]) + 1
+            if next_item > max_number:
+                break
 
             url = base_url + search_string + genre + start_item + str(next_item)
             html = open_url(url)
@@ -75,92 +76,47 @@ def iterate_site(site, configs):
     return dict_of_dataframes
 
 
-def check_list_for_duration(item_list):
+def check_list(item_list, str, str_replace, ix_offset):
     ret_val = ''
     if item_list is None:
         return
     if len(item_list) > 1:
         for ix in range(0,len(item_list)):
-            if item_list[ix].find('min') > -1:
-                ret_val = item_list[ix]
+            if item_list[ix].find(str) > -1:
+                ret_val = item_list[ix+ix_offset].replace(str_replace,'')
     return ret_val
+
+
+def check_list_for_duration(item_list):
+    return check_list(item_list, 'min', '', 0)
 
 
 def check_list_for_restriction(item_list):
-    ret_val = ''
-    if item_list is None:
-        return
-    if len(item_list) > 1:
-        for ix in range(0,len(item_list)):
-            if item_list[ix].find('-') > -1:
-                ret_val = item_list[ix]
-    return ret_val
+    return check_list(item_list, '-', '', 0)
 
 
 def check_list_for_ratingvalue(item_list):
-    ret_val = ''
-    if item_list is None:
-        return
-    if len(item_list) > 1:
-        for ix in range(0,len(item_list)):
-            if item_list[ix].find('ratingValue') > -1:
-                ret_val = item_list[ix + 1].replace('content=','')
-    return ret_val
+    return check_list(item_list, 'ratingValue', 'content=', 1)
 
 
 def check_list_for_bestrating(item_list):
-    ret_val = ''
-    if item_list is None:
-        return
-    if len(item_list) > 1:
-        for ix in range(0,len(item_list)):
-            if item_list[ix].find('bestRating') > -1:
-                ret_val = item_list[ix + 1].replace('content=','')
-    return ret_val
+    return check_list(item_list, 'bestRating', 'content=', 1)
 
 
 def check_list_for_ratingcount(item_list):
-    ret_val = ''
-    if item_list is None:
-        return
-    if len(item_list) > 1:
-        for ix in range(0,len(item_list)):
-            if item_list[ix].find('ratingCount') > -1:
-                ret_val = item_list[ix + 1].replace('content=','')
-    return ret_val
+    return check_list(item_list, 'ratingCount', 'content=', 1)
 
 
 def check_list_for_metascore_favorable(item_list):
-    ret_val = ''
-    if item_list is None:
-        return
-    if len(item_list) > 1:
-        for ix in range(0,len(item_list)):
-            if item_list[ix].find('metascore  favorable') > -1:
-                ret_val = item_list[ix + 1]
-    return ret_val
+    return check_list(item_list, 'metascore  favorable', '', 1)
 
 
 def check_list_for_metascore_mixed(item_list):
-    ret_val = ''
-    if item_list is None:
-        return
-    if len(item_list) > 1:
-        for ix in range(0,len(item_list)):
-            if item_list[ix].find('metascore  mixed') > -1:
-                ret_val = item_list[ix + 1]
-    return ret_val
+    return check_list(item_list, 'metascore  mixed', '', 1)
 
 
 def check_list_for_metascore_unfavorable(item_list):
-    ret_val = ''
-    if item_list is None:
-        return
-    if len(item_list) > 1:
-        for ix in range(0,len(item_list)):
-            if item_list[ix].find('metascore  unfavorable') > -1:
-                ret_val = item_list[ix + 1]
-    return ret_val
+    return check_list(item_list, 'metascore  unfavorable', '', 1)
 
 
 
