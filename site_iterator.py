@@ -33,17 +33,20 @@ def iterate_site(site, configs):
         html = open_url(url)
         max_number = web_page_investigator.get_max_number_of_items(html)
 
-        for p in range(0, max_pages):
-            if next_item == 0:
-                if len(dict_all_movies) == 0:
-                    next_item = 1
-                else:
-                    next_item = max([int(element) for element in [re.sub(",", "", element) for element in
-                                                                  [re.sub('\.', '', element) for element in dict_all_movies[0]]]]) + 1
-            if next_item > max_number:
+        pages_to_be_fetched = (max_number / 50).__ceil__()
+        if pages_to_be_fetched > max_pages:
+            pages_to_be_fetched = max_pages
+
+        for p in range(0, pages_to_be_fetched):
+            if  dict_all_movies == {}:
+                item_to_be_fetched = next_item + 1
+            else:
+                item_to_be_fetched = max([int(element) for element in [re.sub(",", "", element) for element in
+                                                         [re.sub('\.', '', element) for element in dict_all_movies[0]]]]) + 1
+            if item_to_be_fetched > max_number:
                 break
 
-            url = base_url + search_string + genre + start_item + str(next_item)
+            url = base_url + search_string + genre + start_item + str(item_to_be_fetched)
             html = open_url(url)
             if len(dict_all_movies) == 0:
                 dict_all_movies = web_page_investigator.get_values_from_page(html)
