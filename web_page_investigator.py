@@ -1,6 +1,12 @@
 import re
+from urllib.request import urlopen
+
 import pandas as pd
 
+def open_url(url):
+    page = urlopen(url)
+    html = page.read().decode("utf-8")
+    return html
 
 def get_values_from_page(html):
     titles = get_titles(html)
@@ -43,10 +49,25 @@ def get_genres(html):
     return genres
 
 
+def get_plotsummary(url):
+    html = open_url(url)
+    pattern = "<h4 id=\"summaries\".*?</ul>"
+    elements = get_elements(html,pattern)
+    elements = [element.split("Summaries")[1].strip().split(" &mdash")[0].strip() for element in elements]
+    elements = [element.replace('&quot;','"').replace('&#39;',"'") for element in elements]
+    return elements[0]
+
+
 def get_descriptions(html):
     pattern = "<p class=.text-muted.>\n.*?</p>"
     elements = get_elements(html, pattern)
+    subpattern = "(<a href=./title/.*?<div class=.lister-item-image float-left.>|<a href=./title/.*?lister-page-next next-page|<a href=./title/.*?lister-page-prev prev-page)"
+    subelements = re.findall(subpattern, html, flags=re.IGNORECASE | re.MULTILINE | re.DOTALL)
+    subelements = [re.sub("<a href=./title/", "", element, flags=re.IGNORECASE | re.MULTILINE | re.DOTALL) for element in ["" if element.find("See full summary") == -1 else element for element in subelements]]
+    subelements = ["https://www.imdb.com/title/" + element + "/plotsummary" if len(element) > 0 else element for element in [element[:element.find('/')] for element in subelements]]
+    subelements = [get_plotsummary(element) if len(element) > 0 else element for element in subelements]
     descriptions = [element.strip() for element in elements]
+    descriptions = [j if len(i)==0 else i for i, j in zip(subelements, descriptions)]
     return descriptions
 
 
@@ -94,9 +115,9 @@ def get_stars(html):
 
 
 def get_classification_details(html):
-    pattern = " {4}<a href=./title/.*?<span class=.genre.>"
+    pattern = "^ {4}<a href=./title/.*?<span class=.genre.>"
     elements = get_elements(html, pattern)
-    classification_details = [element.replace('  ', '') for element in [re.sub('\(.*?\)', '|', element) for element in elements]]
+    classification_details = [element.replace('  ', '') for element in [re.sub('\(.*?\)', '|', element, flags=re.IGNORECASE | re.MULTILINE | re.DOTALL) for element in elements]]
     classification_details = [element.split('|') for element in classification_details]
     classification_details = [[item.strip() for item in element] for element in classification_details]
     return classification_details
@@ -104,7 +125,7 @@ def get_classification_details(html):
 
 def get_rating_values(html):
     pattern = "(<a href=./title/.*?<div class=.lister-item-image float-left.>|<a href=./title/.*?lister-page-next next-page|<a href=./title/.*?lister-page-prev prev-page)"
-    match_results = re.findall(pattern, html, re.IGNORECASE | re.MULTILINE | re.DOTALL)
+    match_results = re.findall(pattern, html, flags=re.IGNORECASE | re.MULTILINE | re.DOTALL)
     rating_values = ["" if element.find('rating') == -1 else element for element in match_results]
     rating_values = [re.sub("/>", "", element, flags = re.MULTILINE | re.DOTALL) for element in [re.sub("<meta itemprop=", "", element, flags = re.MULTILINE | re.DOTALL) for element in [re.sub("</a>.*?aggregateRating.>", "", element, flags = re.MULTILINE | re.DOTALL) for element in [re.sub("<a href=./title/.*?<a href=./title/.*?>", "", element, flags=re.MULTILINE | re.DOTALL, count = 1) for element in rating_values]]]]
     rating_values = [re.sub("<span.*?<div class=.lister-item-image float-left.>|<span.*?lister-page-next next-page|<span.*?lister-page-prev prev-page", "", element, flags = re.MULTILINE | re.DOTALL) for element in rating_values]

@@ -83,7 +83,7 @@ def check_list(item_list, str, str_replace, ix_offset):
     if item_list is None:
         return
     if len(item_list) > 1:
-        for ix in range(0,len(item_list)):
+        for ix in range(1,len(item_list)):
             if item_list[ix].find(str) > -1:
                 ret_val = item_list[ix+ix_offset].replace(str_replace,'')
     return ret_val
